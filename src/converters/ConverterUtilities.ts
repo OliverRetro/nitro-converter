@@ -19,6 +19,12 @@ export class ConverterUtilities
         private readonly _configuration: Configuration)
     {}
 
+    private getSaveDirectoryPath(type: string): string
+    {
+        const defaultPath = `./assets/bundled/${type}`;
+        return this._configuration.getValue(`${type}.save.directory`) || defaultPath;
+    }
+
     public async downloadSwfTypes(): Promise<void>
     {
         const floorOnly = (this._configuration.getBoolean('convert.furniture.floor.only') || false);
@@ -31,7 +37,8 @@ export class ConverterUtilities
             const now = Date.now();
             const spinner = ora(`Preparing ${ downloadType }`).start();
             const downloadBase = this.getDownloadBaseUrl(downloadType);
-            const saveDirectory = await FileUtilities.getDirectory(`./assets/bundled/${ downloadType }`);
+            const saveDirectoryPath = this.getSaveDirectoryPath(downloadType);
+            const saveDirectory = await FileUtilities.getDirectory(saveDirectoryPath);
             const classNamesWithRevisions = await this.getClassNamesWithRevision(downloadType, floorOnly, wallOnly);
             const classNames = Object.keys(classNamesWithRevisions);
 
@@ -60,7 +67,6 @@ export class ConverterUtilities
                         {
                             console.log();
                             console.error(`Invalid SWF: ${ className }`);
-
                             continue;
                         }
 
@@ -76,7 +82,6 @@ export class ConverterUtilities
                     {
                         console.log();
                         console.error(`Error Converting: ${ className } - ${ error.message }`);
-
                         continue;
                     }
                 }
@@ -149,7 +154,6 @@ export class ConverterUtilities
                     spinner.render();
 
                     const saveDirectory = await FileUtilities.getDirectory(`${ extractedTypeDirectory.path }/${ className }`);
-
                     const file = new File(`${ extractTypeDirectory.path }/${ name }`);
 
                     if(extension === 'nitro')
@@ -159,7 +163,6 @@ export class ConverterUtilities
                         for await (const [ bundleName, bundleBuffer ] of nitroBundle.files.entries())
                         {
                             const saveFile = new File(`${ saveDirectory.path }/${ bundleName }`);
-
                             await saveFile.writeData(bundleBuffer);
                         }
 
@@ -184,12 +187,12 @@ export class ConverterUtilities
         const now = Date.now();
         const spinner = ora('Preparing SWF Extraction').start();
         const swfBaseDirectory = await FileUtilities.getDirectory('./assets/swf');
-        const bundledBaseDirectory = await FileUtilities.getDirectory('./assets/bundled');
 
         for await (const type of ConverterUtilities.BUNDLE_TYPES)
         {
             const swfTypeDirectory = await FileUtilities.getDirectory(`${ swfBaseDirectory.path }/${ type }`);
-            const bundledTypeDirectory = await FileUtilities.getDirectory(`${ bundledBaseDirectory.path }/${ type }`);
+            const bundledDirectoryPath = this.getSaveDirectoryPath(type);
+            const bundledTypeDirectory = await FileUtilities.getDirectory(bundledDirectoryPath);
             const files = await swfTypeDirectory.getFileList();
 
             for await (const name of files)
@@ -208,7 +211,6 @@ export class ConverterUtilities
                     {
                         console.log();
                         console.error(`Invalid SWF: ${ downloadUrl }`);
-
                         continue;
                     }
 
@@ -218,12 +220,10 @@ export class ConverterUtilities
                     {
                         console.log();
                         console.error(`Invalid SWF Bundle: ${ downloadUrl }`);
-
                         continue;
                     }
 
                     const saveFile = new File(`${ bundledTypeDirectory.path }/${ className }.nitro`);
-
                     await saveFile.writeData(await nitroBundle.toBufferAsync());
 
                     spinner.text = `Extracted SWF: ${ className }`;
@@ -246,12 +246,12 @@ export class ConverterUtilities
         const now = Date.now();
         const spinner = ora('Preparing Bundler').start();
         const bundleBaseDirectory = await FileUtilities.getDirectory('./assets/extracted');
-        const bundledBaseDirectory = await FileUtilities.getDirectory('./assets/bundled');
 
         for await (const type of ConverterUtilities.BUNDLE_TYPES)
         {
             const bundleTypeDirectory = await FileUtilities.getDirectory(`${ bundleBaseDirectory.path }/${ type }`);
-            const bundledTypeDirectory = await FileUtilities.getDirectory(`${ bundledBaseDirectory.path }/${ type }`);
+            const bundledDirectoryPath = this.getSaveDirectoryPath(type);
+            const bundledTypeDirectory = await FileUtilities.getDirectory(bundledDirectoryPath);
             const files = await bundleTypeDirectory.getFileList();
 
             for await (const name of files)
@@ -275,7 +275,6 @@ export class ConverterUtilities
                         for await (const childName of childFiles)
                         {
                             const childFile = new File(`${ bundleDirectory.path }/${ childName }`);
-
                             nitroBundle.addFile(childName, await childFile.getContentsAsBuffer());
                         }
                     }
@@ -283,14 +282,12 @@ export class ConverterUtilities
                     if(nitroBundle.totalFiles)
                     {
                         const saveFile = new File(`${ bundledTypeDirectory.path }/${ className }.nitro`);
-
                         await saveFile.writeData(await nitroBundle.toBufferAsync());
                     }
                     else
                     {
                         console.log();
                         console.error(`Error Bundling: ${ name } - The bundle was empty`);
-
                         continue;
                     }
 
