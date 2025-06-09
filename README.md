@@ -32,6 +32,10 @@ You may set any of the urls to a local path on your system or a remote url. A lo
 | convert.effect                 | Either `0` to skip or `1` to run                                                     |
 | convert.furniture              | Either `0` to skip or `1` to run                                                     |
 | convert.pet                    | Either `0` to skip or `1` to run                                                     |
+| figure.save.directory          | A fixed path i.e. C:/xampp/htdocs                                                    |
+| effect.save.directory          | A fixed path i.e. C:/xampp/htdocs                                                    |
+| furniture.save.directory       | A fixed path i.e. C:/xampp/htdocs                                                    |
+| pet.save.directory             | A fixed path i.e. C:/xampp/htdocs                                                    |
 
 ## Running the converter
 
